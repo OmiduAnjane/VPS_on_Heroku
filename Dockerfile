@@ -1,4 +1,7 @@
-FROM ubuntu:20.04 as ubuntu-base
+#============================
+# Base Image - Kali Linux
+#============================
+FROM kalilinux/kali-rolling as kali-base
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true
@@ -33,11 +36,11 @@ CMD ["/opt/bin/entry_point.sh"]
 #============================
 # Utilities
 #============================
-FROM ubuntu-base as ubuntu-utilities
+FROM kali-base as kali-utilities
 
 RUN apt-get -qqy update \
     && apt-get -qqy --no-install-recommends install \
-        firefox htop terminator gnupg2 software-properties-common \
+        firefox-esr htop terminator gnupg2 software-properties-common \
     && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt install -qqy --no-install-recommends ./google-chrome-stable_current_amd64.deb \
     && apt-add-repository ppa:remmina-ppa-team/remmina-next \
@@ -53,11 +56,10 @@ RUN apt-get -qqy update \
 
 # COPY conf.d/* /etc/supervisor/conf.d/
 
-
 #============================
 # GUI
 #============================
-FROM ubuntu-utilities as ubuntu-ui
+FROM kali-utilities as kali-ui
 
 ENV SCREEN_WIDTH=1280 \
     SCREEN_HEIGHT=720 \
@@ -67,13 +69,12 @@ ENV SCREEN_WIDTH=1280 \
     DISPLAY_NUM=99 \
     UI_COMMAND=/usr/bin/startxfce4
 
-# RUN apt-get update -qqy \
-#     && apt-get -qqy install \
-#         xserver-xorg xserver-xorg-video-fbdev xinit pciutils xinput xfonts-100dpi xfonts-75dpi xfonts-scalable kde-plasma-desktop
-
 RUN apt-get update -qqy \
     && apt-get -qqy install --no-install-recommends \
         dbus-x11 xfce4 \
     && apt-get autoclean \
     && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+# Creating a directory for X11 files
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
